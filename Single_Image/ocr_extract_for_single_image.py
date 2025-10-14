@@ -7,7 +7,7 @@ import cv2
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 # Path to your image
-image_path = "images\\file.jpg"  # 👈 change this
+image_path = "file.jpg"  # 👈 change this
 
 # --- Optional: clean the image before OCR ---
 img = cv2.imread(image_path)
