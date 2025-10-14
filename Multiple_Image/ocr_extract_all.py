@@ -13,18 +13,18 @@ for filename in os.listdir(image_folder):
     image_path = os.path.join(image_folder, filename)
     print(f"\n===== Extracting from: {filename} =====")
 
-    # --- Optional: clean the image before OCR ---
-    img = cv2.imread(image_path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+    # # --- Optional: clean the image before OCR ---
+    # img = cv2.imread(image_path)
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
 
-    # Save temporary processed version
+    # # Save temporary processed version
     
-    processed_path = os.path.join(image_folder, "processed_temp.jpg")
-    cv2.imwrite(processed_path, thresh)
+    # processed_path = os.path.join(image_folder, "processed_temp.jpg")
+    # cv2.imwrite(processed_path, thresh)
 
     # Perform OCR using Sinhala + English (fallback)
-    text = pytesseract.image_to_string(Image.open("processed.jpg"), lang="sin+eng")
+    text = pytesseract.image_to_string(Image.open("image_path"), lang="sin+eng")
 
     # Print the extracted text
     print("===== Extracted Text =====\n")
