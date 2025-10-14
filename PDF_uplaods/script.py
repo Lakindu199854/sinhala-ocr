@@ -3,35 +3,35 @@ from dotenv import load_dotenv
 from pdf2image import convert_from_path
 from PIL import Image
 import pytesseract
-import openai
+from openai import AzureOpenAI
 
 # =======================================================
 # LOAD ENVIRONMENT VARIABLES
 # =======================================================
 load_dotenv()
 
-ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
-SUBSCRIPTION_KEY = os.getenv("AZURE_OPENAI_KEY")
-POPPLER_PATH = os.getenv("POPPLER_PATH")
+ENDPOINT = os.getenv("AZURE_ENDPOINT")
+DEPLOYMENT = os.getenv("AZURE_DEPLOYMENT")
+API_VERSION = os.getenv("AZURE_API_VERSION")
+API_KEY = os.getenv("AZURE_API_KEY")
 TESSERACT_PATH = os.getenv("TESSERACT_PATH")
+
+# =======================================================
+# SETUP CLIENTS
+# =======================================================
+pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
+client = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    api_key=API_KEY,
+    api_version=API_VERSION
+)
 
 # =======================================================
 # CONFIGURATION
 # =======================================================
-pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-openai.api_type = "azure"
-openai.api_base = ENDPOINT
-openai.api_version = API_VERSION
-openai.api_key = SUBSCRIPTION_KEY
+PDF_PATH = "20232024-AL-Physics-Paper-Sinhala-Medium-1-10.pdf"
 
-# Path to your input PDF
-PDF_PATH = r"C:\Users\beecom\Desktop\MyProjects\ALPapers\2023-Physics.pdf"
-
-# =======================================================
-# FOLDER STRUCTURE
-# =======================================================
 pdf_name = os.path.splitext(os.path.basename(PDF_PATH))[0]
 base_dir = os.path.join(os.path.dirname(PDF_PATH), pdf_name)
 ocr_dir = os.path.join(base_dir, "ocr_output")
@@ -46,7 +46,7 @@ print(f"📁 Base folder: {base_dir}")
 # STEP 1: PDF → IMAGES
 # =======================================================
 print("📄 Converting PDF to images...")
-pages = convert_from_path(PDF_PATH, dpi=300, poppler_path=POPPLER_PATH)
+pages = convert_from_path(PDF_PATH, dpi=300)
 
 for i, page in enumerate(pages, start=1):
     img_path = os.path.join(base_dir, f"{pdf_name}_page-{i:04d}.jpg")
@@ -89,15 +89,15 @@ for ocr_path, raw_text in ocr_texts:
     corrected_path = os.path.join(llm_dir, f"{page_name}_corrected.txt")
 
     try:
-        response = openai.ChatCompletion.create(
-            engine=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=DEPLOYMENT,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": raw_text}
-            ],
-            temperature=0,
+            ]
         )
-        corrected_text = response["choices"][0]["message"]["content"]
+
+        corrected_text = response.choices[0].message.content
 
         with open(corrected_path, "w", encoding="utf-8") as f:
             f.write(corrected_text)

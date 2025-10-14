@@ -32,5 +32,5 @@ import pytesseract
 # pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
-text = pytesseract.image_to_string(Image.open("file.jpg"), lang="sin+eng")
+text = pytesseract.image_to_string(Image.open("20232024-AL-Physics-Paper-Sinhala-Medium-1-10_page-0001.jpg"), lang="sin+eng")
 print(text)
