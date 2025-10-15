@@ -45,29 +45,10 @@ def run_ocr(image_path):
     except Exception as e:
         print(f"❌ Error during OCR for {image_path}: {e}")
         return ""
-    
-ocr_texts = []
-for i in range(len(pages)):
-    img_path = os.path.join(base_dir, f"{pdf_name}_page-{i+1:04d}.jpg")
-    text = run_ocr(img_path)
-    ocr_path = os.path.join(ocr_dir, f"page-{i+1:04d}.txt")
-    with open(ocr_path, "w", encoding="utf-8") as f:
-        f.write(text)
-    ocr_texts.append((ocr_path, text))
-    print(f"📝 OCR output saved: {ocr_path}")
 
 # --- Gemini correction calls ---
-SYSTEM_PROMPT = (
-    "You are a Sinhala OCR correction and exam analysis assistant. I will provide you with raw Sinhala text extracted "
-    "from one exam paper page using OCR. Your task is to: "
-    "1. Correct only OCR-related issues such as broken Sinhala letters, missing/misplaced spaces, incorrect punctuation, "
-    "Latin letters mixed into Sinhala words, or encoding errors — but DO NOT guess or translate content, do not change any original wording or meaning. "
-    "2. From the cleaned text, extract any multiple-choice questions (MCQs) that appear. "
-    "For each MCQ, return its question number, the corrected question text, a dictionary of options (with numeric string keys), "
-    "the correct answer (as a string matching one of the keys), and a short explanation in Sinhala. "
-    "If the question relies on a figure or diagram, omit the correct answer and explanation. "
-    "Respond strictly as a JSON object following the schema provided. Process one page at a time."
-)
+with open("system_prompt.md", "r", encoding="utf-8") as f:
+    SYSTEM_PROMPT = f.read()
 
 # Define the schema for the expected JSON output to guide the model
 response_schema = {
@@ -112,25 +93,32 @@ response_schema = {
 # --- Gemini correction calls ---
 print("🤖 Sending OCR text to Gemini for correction...")
 
-# Setup Gemini client
 client = genai.Client(api_key=GEMINI_API_KEY)
-
 merged_questions = []
 
-for ocr_path, raw_text in ocr_texts:
-    page_name = os.path.basename(ocr_path).replace(".txt", "")
+for i, page in enumerate(pages, start=1):
+    img_path = os.path.join(base_dir, f"{pdf_name}_page-{i:04d}.jpg")
+    page_name = f"page-{i:04d}"
     corrected_json_path = os.path.join(llm_dir, f"{page_name}_corrected.json")
 
+    print(f"🔍 Running OCR on {page_name}...")
+    print(img_path)
+    raw_text = run_ocr(img_path)
+
+    if not raw_text.strip():
+        print(f"⚠️ No text detected in {page_name}, skipping.")
+        continue
+
     try:
-        # Send to Gemini
+        # Send OCR text directly to Gemini (no saving)
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
                 response_mime_type="application/json",
                 response_schema=response_schema,
             ),
-            contents=[raw_text]
+            contents=[raw_text],
         )
 
         # Parse JSON response
@@ -140,9 +128,9 @@ for ocr_path, raw_text in ocr_texts:
         with open(corrected_json_path, "w", encoding="utf-8") as f:
             json.dump(page_data, f, ensure_ascii=False, indent=2)
 
-        print(f"✅ Saved corrected JSON: {corrected_json_path}")
+        print(f"✅ JSON saved for {page_name}: {corrected_json_path}")
 
-        # Add questions to final merged list
+        # Add to merged questions
         if "questions" in page_data:
             merged_questions.extend(page_data["questions"])
             print(f"🟢 {len(page_data['questions'])} questions added from {page_name}")
@@ -151,6 +139,7 @@ for ocr_path, raw_text in ocr_texts:
 
     except Exception as e:
         print(f"❌ Error processing {page_name}: {e}")
+        continue
 
 # --- Save final merged JSON ---
 final_output_path = os.path.join(base_dir, "final_questions.json")
