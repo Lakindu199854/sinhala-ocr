@@ -33,6 +33,12 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 text = pytesseract.image_to_string(Image.open("page3.jpg"), lang="sin+eng")
+
+
+
+
+
+
 print(text)
 
 

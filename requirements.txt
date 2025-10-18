@@ -3,3 +3,12 @@ pdf2image
 pytesseract
 openai
 Pillow
+fastapi
+uvicorn
+python-dotenv
+pdf2image
+pillow
+pytesseract
+google-genai
+python-multipart
+

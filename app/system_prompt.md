@@ -27,4 +27,3 @@ I will provide you with raw Sinhala text extracted from one exam paper page usin
 5. **JSON Output Structure**  
    Return each extracted question in the given json response schema:
    output should have  question_number,question_text,options,The key (number) corresponding to the correct option. If unclear or figure-based, omit.,A brief Sinhala explanation of the correct answer. Omit if not applicable or if based on a diagram.
-   
